@@ -1,0 +1,72 @@
+{
+  "name": "markdown-reader",
+  "productName": "Markdown Reader",
+  "version": "1.0.0",
+  "description": "A desktop Markdown reader with light/dark mode",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "tsc",
+    "dist": "electron-builder --mac",
+    "dist:all": "electron-builder -mwl",
+    "ts-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "d4t4cr0c",
+  "license": "ISC",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.1",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "marked": "^17.0.1"
+  },
+  "build": {
+    "appId": "com.markdown.reader",
+    "productName": "Markdown Reader",
+    "electronVersion": "39.2.7",
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "fileAssociations": [
+        {
+          "ext": ["md", "markdown"],
+          "name": "Markdown Document",
+          "role": "Viewer",
+          "icon": "assets/icon.png"
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Markdown Reader",
+      "icon": "assets/icon.png"
+    }
+  }
+}

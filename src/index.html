@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Reader</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="progressBar" class="progress-bar"></div>
+  <div class="container">
+    <header>
+      <h1>Markdown Reader</h1>
+      <div class="controls">
+        <button id="openFile" class="btn">Open File</button>
+        <button id="themeToggle" class="btn theme-btn">
+          <svg class="light-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="dark-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div id="content" class="markdown-content">
+        <div class="welcome">
+          <h2>Welcome to Markdown Reader</h2>
+          <p>Click "Open File" to load a Markdown file</p>
+        </div>
+      </div>
+
+      <div class="floating-controls">
+        <button id="increaseFont" class="btn floating-btn" title="Increase font size">A+</button>
+        <button id="decreaseFont" class="btn floating-btn" title="Decrease font size">A-</button>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>
