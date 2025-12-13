@@ -36,6 +36,11 @@ function createWindow() {
       shell.openExternal(url);
     }
   });
+
+  // Clean up reference when window is closed
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
@@ -103,11 +108,21 @@ ipcMain.handle('set-theme', (event, theme) => {
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
 
-  if (mainWindow && mainWindow.webContents) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
     openFileInRenderer(filePath);
   } else {
-    // Store the file path to open it once the window is ready
+    // Store the file path to open later
     fileToOpen = filePath;
+
+    // Only create window if app is already ready
+    if (app.isReady() && !mainWindow) {
+      createWindow();
+      mainWindow.webContents.once('did-finish-load', () => {
+        openFileInRenderer(fileToOpen);
+        fileToOpen = null;
+      });
+    }
+    // If app is not ready, the file will be opened in the whenReady handler
   }
 });
 
