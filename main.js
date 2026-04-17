@@ -13,7 +13,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: join(__dirname, 'assets/icon.png'),
+    icon: join(__dirname, 'assets/MDReader.3.png'),
     webPreferences: {
       preload: join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -49,7 +49,7 @@ app.whenReady().then(() => {
 
   // Set dock icon for macOS
   if (process.platform === 'darwin') {
-    const icon = nativeImage.createFromPath(join(__dirname, 'assets/icon.png'));
+    const icon = nativeImage.createFromPath(join(__dirname, 'assets/MDReader.3.png'));
     app.dock.setIcon(icon);
   }
 

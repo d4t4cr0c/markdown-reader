@@ -9,7 +9,7 @@
     "start": "electron .",
     "dev": "electron .",
     "build": "tsc",
-    "dist": "electron-builder --mac",
+    "dist": "electron-builder --mac --arm64",
     "dist:all": "electron-builder -mwl",
     "ts-check": "tsc --noEmit",
     "lint": "eslint .",
@@ -21,7 +21,6 @@
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.1",
     "electron": "^39.2.7",
@@ -35,38 +34,47 @@
     "typescript-eslint": "^8.49.0"
   },
   "dependencies": {
-    "dotenv": "^17.2.3",
     "marked": "^17.0.1"
   },
   "build": {
     "appId": "com.markdown.reader",
     "productName": "Markdown Reader",
     "electronVersion": "39.2.7",
+    "asar": true,
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "removePackageKeywords": true,
+    "electronLanguages": ["en-US"],
     "files": [
       "main.js",
       "preload.cjs",
       "src/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "!**/*.ts",
+      "!**/*.map",
+      "!**/__tests__/**",
+      "!**/*.test.*"
     ],
     "mac": {
-      "icon": "assets/icon.png",
+      "icon": "assets/icon.icns",
       "category": "public.app-category.productivity",
       "target": [
-        "dmg",
-        "zip"
+        { "target": "dmg", "arch": "arm64" },
+        { "target": "zip", "arch": "arm64" }
       ],
       "fileAssociations": [
         {
           "ext": ["md", "markdown"],
           "name": "Markdown Document",
           "role": "Viewer",
-          "icon": "assets/icon.png"
+          "icon": "assets/MDReader.3.png"
         }
       ]
     },
     "dmg": {
       "title": "Markdown Reader",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.icns",
+      "format": "ULFO"
     }
   }
 }
