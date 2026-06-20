@@ -67,7 +67,7 @@
           "ext": ["md", "markdown"],
           "name": "Markdown Document",
           "role": "Viewer",
-          "icon": "assets/MDReader.3.png"
+          "icon": "assets/MDReader-4.png"
         }
       ]
     },

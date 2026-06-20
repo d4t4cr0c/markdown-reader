@@ -14,6 +14,9 @@ const MAX_FONT_SIZE = 24;
 const FONT_SIZE_STEP = 2;
 let currentFontSize = 16;
 
+// Whether a document is currently displayed (vs. the welcome screen)
+let documentLoaded = false;
+
 // Initialize theme
 function initTheme() {
   const savedTheme = localStorage.getItem('theme') || 'light';
@@ -51,6 +54,67 @@ function renderMarkdown(content, filePath) {
   // Update window title
   const fileName = filePath.split(/[\\/]/).pop();
   document.title = `${fileName} - Markdown Reader`;
+
+  documentLoaded = true;
+}
+
+// Escape a string for safe insertion into HTML
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+// Render the welcome screen, including a list of recent documents
+function renderWelcome(recentFiles) {
+  let recentHtml = '';
+
+  if (recentFiles && recentFiles.length > 0) {
+    const items = recentFiles.map(filePath => {
+      const name = filePath.split(/[\\/]/).pop();
+      return `<li class="recent-item" data-path="${escapeHtml(filePath)}" title="${escapeHtml(filePath)}">
+        <span class="recent-name">${escapeHtml(name)}</span>
+        <span class="recent-path">${escapeHtml(filePath)}</span>
+      </li>`;
+    }).join('');
+
+    recentHtml = `
+      <div class="recent-files">
+        <h3>Recent Documents</h3>
+        <ul class="recent-list">${items}</ul>
+      </div>`;
+  }
+
+  contentDiv.innerHTML = `
+    <div class="welcome">
+      <h2>Welcome to Markdown Reader</h2>
+      <p>Click "Open File" to load a Markdown file</p>
+      ${recentHtml}
+    </div>`;
+
+  contentDiv.querySelectorAll('.recent-item').forEach(item => {
+    item.addEventListener('click', () => openRecentFile(item.dataset.path));
+  });
+
+  documentLoaded = false;
+}
+
+// Open a recent document by its file path
+async function openRecentFile(filePath) {
+  try {
+    const result = await window.electronAPI.openRecentFile(filePath);
+    if (result) {
+      renderMarkdown(result.content, result.filePath);
+    }
+    // If the file is missing, the main process drops it and pushes an
+    // updated recents list, which refreshes the welcome screen.
+  } catch (error) {
+    console.error('Error opening recent file:', error);
+  }
 }
 
 // Open and render markdown file
@@ -187,7 +251,26 @@ window.electronAPI.onFileOpened((data) => {
   renderMarkdown(content, filePath);
 });
 
+// Refresh the welcome screen when the recents list changes (e.g. cleared
+// from the menu), but only while no document is being viewed.
+window.electronAPI.onRecentFilesUpdated((files) => {
+  if (!documentLoaded) {
+    renderWelcome(files);
+  }
+});
+
+// Populate the welcome screen with recent documents on startup
+async function initWelcome() {
+  try {
+    const recentFiles = await window.electronAPI.getRecentFiles();
+    renderWelcome(recentFiles);
+  } catch (error) {
+    console.error('Error loading recent files:', error);
+  }
+}
+
 // Initialize
 initTheme();
 initFontSize();
+initWelcome();
 updateProgressBar();
