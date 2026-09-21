@@ -9,6 +9,7 @@ A desktop application built with Electron for reading Markdown files with light/
 - Light and Dark mode toggle
 - Persistent theme preference
 - Clean, distraction-free reading interface
+- In-document search (⌘F / Ctrl+F): case-insensitive, shows "N of M" match count, Tab / Shift+Tab or Enter cycles through occurrences, Esc clears
 - Support for all standard Markdown elements:
   - Headings
   - Lists (ordered and unordered)

@@ -7,6 +7,10 @@ const increaseFontBtn = document.getElementById('increaseFont');
 const decreaseFontBtn = document.getElementById('decreaseFont');
 const contentDiv = document.getElementById('content');
 const progressBar = document.getElementById('progressBar');
+const searchInput = document.getElementById('searchInput');
+const searchCount = document.getElementById('searchCount');
+const searchPrevBtn = document.getElementById('searchPrev');
+const searchNextBtn = document.getElementById('searchNext');
 
 // Font size settings
 const MIN_FONT_SIZE = 12;
@@ -56,6 +60,9 @@ function renderMarkdown(content, filePath) {
   document.title = `${fileName} - Markdown Reader`;
 
   documentLoaded = true;
+
+  // Re-apply any active search to the freshly rendered document
+  runSearch();
 }
 
 // Escape a string for safe insertion into HTML
@@ -101,6 +108,7 @@ function renderWelcome(recentFiles) {
   });
 
   documentLoaded = false;
+  runSearch();
 }
 
 // Open a recent document by its file path
@@ -235,11 +243,214 @@ function updateProgressBar() {
   progressBar.style.width = `${progress}%`;
 }
 
+// ---------------------------------------------------------------------------
+// In-document search
+// ---------------------------------------------------------------------------
+
+// All <mark> elements for the current query, in document order
+let searchMatches = [];
+// Index into searchMatches of the highlighted "current" occurrence (-1 = none)
+let currentMatchIndex = -1;
+
+// Remove all highlight marks and merge the text nodes back together
+function clearSearchHighlights() {
+  const marks = contentDiv.querySelectorAll('mark.search-match');
+  const parents = new Set();
+  marks.forEach(mark => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parents.add(parent);
+  });
+  // normalize() joins adjacent text nodes split by the previous highlight pass
+  parents.forEach(parent => parent.normalize());
+  searchMatches = [];
+  currentMatchIndex = -1;
+}
+
+// Collect the text nodes of the rendered document that are eligible for search
+function getSearchableTextNodes() {
+  const walker = document.createTreeWalker(contentDiv, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const parent = node.parentElement;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      // Skip UI chrome injected into the document (e.g. copy buttons)
+      if (parent.closest('.code-copy-btn, script, style')) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const nodes = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    nodes.push(node);
+  }
+  return nodes;
+}
+
+// Wrap every case-insensitive occurrence of `query` in a <mark> element.
+// Matching is done per text node, so a phrase split across inline elements
+// (e.g. "**bo**ld") will not be found.
+function highlightMatches(query) {
+  const needle = query.toLowerCase();
+  const textNodes = getSearchableTextNodes();
+
+  textNodes.forEach(textNode => {
+    const text = textNode.nodeValue;
+    const haystack = text.toLowerCase();
+
+    let index = haystack.indexOf(needle);
+    if (index === -1) return;
+
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+
+    while (index !== -1) {
+      if (index > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, index)));
+      }
+
+      const mark = document.createElement('mark');
+      mark.className = 'search-match';
+      mark.textContent = text.slice(index, index + needle.length);
+      fragment.appendChild(mark);
+      searchMatches.push(mark);
+
+      lastIndex = index + needle.length;
+      index = haystack.indexOf(needle, lastIndex);
+    }
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+
+    textNode.parentNode.replaceChild(fragment, textNode);
+  });
+}
+
+// Update the "N of M" counter and the enabled state of the nav buttons
+function updateSearchCount() {
+  const total = searchMatches.length;
+  const hasQuery = searchInput.value.length > 0;
+
+  if (!hasQuery) {
+    searchCount.textContent = '';
+    searchCount.classList.remove('no-matches');
+  } else if (total === 0) {
+    searchCount.textContent = 'No matches';
+    searchCount.classList.add('no-matches');
+  } else {
+    searchCount.textContent = `${currentMatchIndex + 1} of ${total}`;
+    searchCount.classList.remove('no-matches');
+  }
+
+  searchPrevBtn.disabled = total === 0;
+  searchNextBtn.disabled = total === 0;
+}
+
+// Make the match at `index` the current one and scroll it into view
+function goToMatch(index) {
+  const total = searchMatches.length;
+  if (total === 0) {
+    currentMatchIndex = -1;
+    updateSearchCount();
+    return;
+  }
+
+  if (currentMatchIndex >= 0 && searchMatches[currentMatchIndex]) {
+    searchMatches[currentMatchIndex].classList.remove('current');
+  }
+
+  // Wrap around in both directions
+  currentMatchIndex = ((index % total) + total) % total;
+
+  const mark = searchMatches[currentMatchIndex];
+  mark.classList.add('current');
+  mark.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+  updateSearchCount();
+}
+
+function goToNextMatch() {
+  goToMatch(currentMatchIndex + 1);
+}
+
+function goToPrevMatch() {
+  goToMatch(currentMatchIndex - 1);
+}
+
+// Re-run the search for the current input value against the rendered document
+function runSearch() {
+  clearSearchHighlights();
+
+  const query = searchInput.value;
+  if (query.length > 0 && documentLoaded) {
+    highlightMatches(query);
+  }
+
+  if (searchMatches.length > 0) {
+    goToMatch(0);
+  } else {
+    updateSearchCount();
+  }
+}
+
+function clearSearch() {
+  searchInput.value = '';
+  runSearch();
+}
+
+function focusSearch() {
+  searchInput.focus();
+  searchInput.select();
+}
+
 // Event listeners
 themeToggleBtn.addEventListener('click', toggleTheme);
 openFileBtn.addEventListener('click', openFile);
 increaseFontBtn.addEventListener('click', increaseFont);
 decreaseFontBtn.addEventListener('click', decreaseFont);
+
+// Search bar
+searchInput.addEventListener('input', runSearch);
+searchPrevBtn.addEventListener('click', goToPrevMatch);
+searchNextBtn.addEventListener('click', goToNextMatch);
+
+searchInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    if (event.shiftKey) {
+      goToPrevMatch();
+    } else {
+      goToNextMatch();
+    }
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    clearSearch();
+    searchInput.blur();
+  }
+});
+
+// Global shortcuts: Cmd/Ctrl+F focuses the search box, Tab / Shift+Tab cycle
+// through the occurrences whenever there is an active search with matches.
+document.addEventListener('keydown', (event) => {
+  const isFindShortcut = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f';
+  if (isFindShortcut) {
+    event.preventDefault();
+    focusSearch();
+    return;
+  }
+
+  if (event.key === 'Tab' && searchMatches.length > 0) {
+    event.preventDefault();
+    if (event.shiftKey) {
+      goToPrevMatch();
+    } else {
+      goToNextMatch();
+    }
+  }
+});
 
 // Track scroll progress
 const mainElement = document.querySelector('main');
